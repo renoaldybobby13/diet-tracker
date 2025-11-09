@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Aplikasi Diet Tracker untuk mencapai target berat badan ideal">
+    <meta name="theme-color" content="#9333ea">
+    <title>Diet Tracker - Target 55kg</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel Standalone -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            overscroll-behavior: none;
+        }
+    </style>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { Calendar, TrendingDown, Droplet, Utensils, Dumbbell, Heart, Plus, Search, X, CheckCircle, AlertCircle } = lucide;
+
+        // Database makanan Indonesia
+        const foodDatabase = [
+          { name: "Nasi Putih", category: "Pokok", calories: 130, protein: 2.7, carbs: 28, fat: 0.3, fiber: 0.4, serving: "100g (1 centong)" },
+          { name: "Nasi Merah", category: "Pokok", calories: 111, protein: 2.6, carbs: 23, fat: 0.9, fiber: 1.8, serving: "100g" },
+          { name: "Lontong", category: "Pokok", calories: 120, protein: 2.1, carbs: 27, fat: 0.2, fiber: 0.5, serving: "100g" },
+          { name: "Kentang Rebus", category: "Pokok", calories: 77, protein: 2, carbs: 17, fat: 0.1, fiber: 2.2, serving: "100g" },
+          { name: "Ubi Rebus", category: "Pokok", calories: 86, protein: 1.6, carbs: 20, fat: 0.1, fiber: 3, serving: "100g" },
+          { name: "Ayam Dada Tanpa Kulit", category: "Protein", calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, serving: "100g" },
+          { name: "Telur Ayam Rebus", category: "Protein", calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, serving: "1 butir (50g)" },
+          { name: "Ikan Kembung", category: "Protein", calories: 205, protein: 18, carbs: 0, fat: 15, fiber: 0, serving: "100g" },
+          { name: "Ikan Tuna", category: "Protein", calories: 144, protein: 23, carbs: 0, fat: 5, fiber: 0, serving: "100g" },
+          { name: "Udang", category: "Protein", calories: 99, protein: 24, carbs: 0.2, fat: 0.3, fiber: 0, serving: "100g" },
+          { name: "Tempe Goreng", category: "Protein", calories: 193, protein: 18.3, carbs: 10, fat: 10.8, fiber: 2, serving: "100g (2 potong)" },
+          { name: "Tahu Putih", category: "Protein", calories: 76, protein: 8, carbs: 1.9, fat: 4.8, fiber: 0.3, serving: "100g (1 potong besar)" },
+          { name: "Kacang Merah Rebus", category: "Protein", calories: 127, protein: 8.7, carbs: 23, fat: 0.5, fiber: 6.4, serving: "100g" },
+          { name: "Bayam Rebus", category: "Sayuran", calories: 23, protein: 2.9, carbs: 3.6, fat: 0.3, fiber: 2.2, serving: "100g" },
+          { name: "Kangkung Tumis", category: "Sayuran", calories: 25, protein: 2.6, carbs: 4.3, fat: 0.3, fiber: 2.5, serving: "100g" },
+          { name: "Brokoli Rebus", category: "Sayuran", calories: 35, protein: 2.4, carbs: 7, fat: 0.4, fiber: 3.3, serving: "100g" },
+          { name: "Wortel Mentah", category: "Sayuran", calories: 41, protein: 0.9, carbs: 10, fat: 0.2, fiber: 2.8, serving: "100g" },
+          { name: "Timun", category: "Sayuran", calories: 15, protein: 0.7, carbs: 3.6, fat: 0.1, fiber: 0.5, serving: "100g" },
+          { name: "Tomat", category: "Sayuran", calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2, fiber: 1.2, serving: "100g" },
+          { name: "Pisang", category: "Buah", calories: 89, protein: 1.1, carbs: 23, fat: 0.3, fiber: 2.6, serving: "100g (1 buah sedang)" },
+          { name: "Apel", category: "Buah", calories: 52, protein: 0.3, carbs: 14, fat: 0.2, fiber: 2.4, serving: "100g" },
+          { name: "Pepaya", category: "Buah", calories: 43, protein: 0.5, carbs: 11, fat: 0.3, fiber: 1.7, serving: "100g" },
+          { name: "Jeruk", category: "Buah", calories: 47, protein: 0.9, carbs: 12, fat: 0.1, fiber: 2.4, serving: "100g" },
+          { name: "Semangka", category: "Buah", calories: 30, protein: 0.6, carbs: 8, fat: 0.2, fiber: 0.4, serving: "100g" },
+          { name: "Gorengan (Pisang Goreng)", category: "Jajanan", calories: 289, protein: 2.4, carbs: 38, fat: 14, fiber: 2, serving: "100g (2 potong)" },
+          { name: "Bakso Sapi", category: "Jajanan", calories: 198, protein: 14, carbs: 12, fat: 11, fiber: 0, serving: "100g (1 mangkok)" },
+          { name: "Mie Ayam", category: "Jajanan", calories: 450, protein: 15, carbs: 60, fat: 16, fiber: 2, serving: "1 porsi" },
+          { name: "Nasi Goreng", category: "Jajanan", calories: 333, protein: 8, carbs: 42, fat: 14, fiber: 1, serving: "1 porsi" },
+        ];
+
+        function App() {
+          const [activeTab, setActiveTab] = useState('dashboard');
+          const [foodLog, setFoodLog] = useState([]);
+          const [waterIntake, setWaterIntake] = useState(0);
+          const [showFoodSearch, setShowFoodSearch] = useState(false);
+          const [selectedFood, setSelectedFood] = useState(null);
+          const [searchTerm, setSearchTerm] = useState('');
+          const [portion, setPortion] = useState(1);
+          const [mealTime, setMealTime] = useState('breakfast');
+          const [customFoods, setCustomFoods] = useState([]);
+          const [showManualInput, setShowManualInput] = useState(false);
+          const [manualFood, setManualFood] = useState({
+            name: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', serving: '1 porsi'
+          });
+          const [currentWeight, setCurrentWeight] = useState(76);
+          const [progressData, setProgressData] = useState([{ week: 0, weight: 76 }]);
+
+          const targetCalories = 1410;
+          const proteinTarget = 122;
+          const waterTarget = 2500;
+
+          const dailyTotals = foodLog.reduce((acc, food) => ({
+            calories: acc.calories + food.calories,
+            protein: acc.protein + food.protein,
+            carbs: acc.carbs + food.carbs,
+            fat: acc.fat + food.fat,
+            fiber: acc.fiber + food.fiber,
+          }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
+
+          const allFoods = [...foodDatabase, ...customFoods];
+          const filteredFoods = allFoods.filter(food =>
+            food.name.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+
+          const addFoodToLog = () => {
+            if (selectedFood) {
+              const foodEntry = {
+                ...selectedFood,
+                calories: Math.round(selectedFood.calories * portion),
+                protein: Math.round(selectedFood.protein * portion * 10) / 10,
+                carbs: Math.round(selectedFood.carbs * portion * 10) / 10,
+                fat: Math.round(selectedFood.fat * portion * 10) / 10,
+                fiber: Math.round(selectedFood.fiber * portion * 10) / 10,
+                portion, mealTime, id: Date.now(),
+              };
+              setFoodLog([...foodLog, foodEntry]);
+              setShowFoodSearch(false);
+              setSelectedFood(null);
+              setPortion(1);
+            }
+          };
+
+          const addManualFood = () => {
+            if (manualFood.name && manualFood.calories) {
+              const newFood = {
+                name: manualFood.name,
+                category: "Custom",
+                calories: parseFloat(manualFood.calories),
+                protein: parseFloat(manualFood.protein) || 0,
+                carbs: parseFloat(manualFood.carbs) || 0,
+                fat: parseFloat(manualFood.fat) || 0,
+                fiber: parseFloat(manualFood.fiber) || 0,
+                serving: manualFood.serving,
+              };
+              setCustomFoods([...customFoods, newFood]);
+              setFoodLog([...foodLog, { ...newFood, portion: 1, mealTime, id: Date.now() }]);
+              setManualFood({ name: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', serving: '1 porsi' });
+              setShowManualInput(false);
+              setShowFoodSearch(false);
+            }
+          };
+
+          const analyzeNutrition = (food) => {
+            const warnings = [];
+            const info = [];
+            if (food.fat > 15) warnings.push(`⚠️ Tinggi lemak (${food.fat}g)`);
+            if (food.calories > 300) warnings.push(`⚠️ Tinggi kalori (${food.calories} kal)`);
+            if (food.fiber > 3) info.push(`✅ Tinggi serat (${food.fiber}g)`);
+            if (food.protein > 15) info.push(`✅ Tinggi protein (${food.protein}g)`);
+            return { warnings, info };
+          };
+
+          const Icon = ({ icon: IconComponent, ...props }) => {
+            React.useEffect(() => {
+              lucide.createIcons();
+            });
+            return React.createElement('i', { 'data-lucide': IconComponent, ...props });
+          };
+
+          return (
+            <div className="min-h-screen bg-gray-100 pb-20">
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 shadow-lg">
+                <h1 className="text-2xl font-bold mb-1">Diet Tracker</h1>
+                <p className="text-sm opacity-90">Target: 76kg → 55kg</p>
+              </div>
+
+              <div className="p-4">
+                {activeTab === 'dashboard' && (
+                  <div className="space-y-4">
+                    <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon icon="heart" className="w-5 h-5" />
+                        <h3 className="font-semibold">Motivasi Hari Ini</h3>
+                      </div>
+                      <p className="text-sm">Setiap langkah kecil membawamu lebih dekat ke tujuan! 💪</p>
+                    </div>
+
+                    <div className="bg-white rounded-lg shadow p-4">
+                      <h3 className="font-semibold mb-3">Kalori Hari Ini</h3>
+                      <div className="flex justify-between mb-2 text-sm">
+                        <span className="font-semibold text-purple-600">{dailyTotals.calories} kal</span>
+                        <span className="text-gray-600">Target: {targetCalories} kal</span>
+                      </div>
+                      <div className="h-3 bg-purple-200 rounded overflow-hidden">
+                        <div 
+                          className="h-full bg-purple-600"
+                          style={{ width: `${Math.min((dailyTotals.calories / targetCalories) * 100, 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-lg shadow p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Icon icon="droplet" className="w-5 h-5 text-blue-500" />
+                          <h3 className="font-semibold">Minum Air</h3>
+                        </div>
+                        <button
+                          onClick={() => setWaterIntake(waterIntake + 250)}
+                          className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm"
+                        >
+                          +250ml
+                        </button>
+                      </div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="font-semibold text-blue-600">{waterIntake} ml</span>
+                        <span className="text-gray-600">{waterTarget} ml</span>
+                      </div>
+                      <div className="h-3 bg-blue-200 rounded overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500"
+                          style={{ width: `${Math.min((waterIntake / waterTarget) * 100, 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'food' && (
+                  <div className="space-y-4">
+                    <button
+                      onClick={() => setShowFoodSearch(true)}
+                      className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2"
+                    >
+                      <Icon icon="plus" className="w-5 h-5" />
+                      Tambah Makanan
+                    </button>
+
+                    {['breakfast', 'lunch', 'dinner', 'snack'].map(meal => {
+                      const mealFoods = foodLog.filter(f => f.mealTime === meal);
+                      const mealNames = { breakfast: 'Sarapan', lunch: 'Siang', dinner: 'Malam', snack: 'Snack' };
+                      return (
+                        <div key={meal} className="bg-white rounded-lg shadow p-4">
+                          <h3 className="font-semibold mb-3">{mealNames[meal]}</h3>
+                          {mealFoods.length === 0 ? (
+                            <p className="text-sm text-gray-400 text-center py-2">Belum ada makanan</p>
+                          ) : (
+                            mealFoods.map(food => {
+                              const analysis = analyzeNutrition(food);
+                              return (
+                                <div key={food.id} className="border-l-4 border-purple-500 pl-3 py-2 mb-2">
+                                  <div className="flex justify-between">
+                                    <div>
+                                      <p className="font-semibold text-sm">{food.name}</p>
+                                      <p className="text-xs text-gray-600">{food.calories} kal</p>
+                                    </div>
+                                    <button onClick={() => setFoodLog(foodLog.filter(f => f.id !== food.id))}>
+                                      <Icon icon="x" className="w-4 h-4 text-red-500" />
+                                    </button>
+                                  </div>
+                                  {analysis.warnings.map((w, i) => (
+                                    <p key={i} className="text-xs text-red-700 mt-1">{w}</p>
+                                  ))}
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {showFoodSearch && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                  <div className="bg-white rounded-lg w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+                    <div className="p-4 border-b">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-bold">Tambah Makanan</h3>
+                        <button onClick={() => {
+                          setShowFoodSearch(false);
+                          setShowManualInput(false);
+                          setSelectedFood(null);
+                        }}>
+                          <Icon icon="x" className="w-6 h-6" />
+                        </button>
+                      </div>
+
+                      <select
+                        value={mealTime}
+                        onChange={(e) => setMealTime(e.target.value)}
+                        className="w-full p-2 border rounded mb-3"
+                      >
+                        <option value="breakfast">Sarapan</option>
+                        <option value="lunch">Makan Siang</option>
+                        <option value="dinner">Makan Malam</option>
+                        <option value="snack">Snack</option>
+                      </select>
+
+                      {!showManualInput && !selectedFood && (
+                        <>
+                          <input
+                            type="text"
+                            placeholder="Cari makanan..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full p-2 border rounded mb-3"
+                          />
+                          <button
+                            onClick={() => setShowManualInput(true)}
+                            className="w-full bg-green-600 text-white py-2 rounded font-semibold"
+                          >
+                            + Input Manual
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4">
+                      {showManualInput ? (
+                        <div className="space-y-3">
+                          <input
+                            type="text"
+                            placeholder="Nama makanan"
+                            value={manualFood.name}
+                            onChange={(e) => setManualFood({...manualFood, name: e.target.value})}
+                            className="w-full p-2 border rounded"
+                          />
+                          <input
+                            type="number"
+                            placeholder="Kalori"
+                            value={manualFood.calories}
+                            onChange={(e) => setManualFood({...manualFood, calories: e.target.value})}
+                            className="w-full p-2 border rounded"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setShowManualInput(false)}
+                              className="flex-1 bg-gray-300 py-2 rounded"
+                            >
+                              Batal
+                            </button>
+                            <button
+                              onClick={addManualFood}
+                              className="flex-1 bg-green-600 text-white py-2 rounded"
+                            >
+                              Simpan
+                            </button>
+                          </div>
+                        </div>
+                      ) : selectedFood ? (
+                        <div>
+                          <h4 className="font-bold mb-2">{selectedFood.name}</h4>
+                          <p className="text-sm mb-3">{Math.round(selectedFood.calories * portion)} kal</p>
+                          <label className="block text-sm mb-2">Porsi: {portion}x</label>
+                          <input
+                            type="range"
+                            min="0.5"
+                            max="5"
+                            step="0.5"
+                            value={portion}
+                            onChange={(e) => setPortion(parseFloat(e.target.value))}
+                            className="w-full mb-4"
+                          />
+                          <button
+                            onClick={addFoodToLog}
+                            className="w-full bg-purple-600 text-white py-2 rounded"
+                          >
+                            Tambahkan
+                          </button>
+                        </div>
+                      ) : (
+                        filteredFoods.map((food, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setSelectedFood(food)}
+                            className="w-full text-left p-3 border rounded mb-2 hover:bg-gray-50"
+                          >
+                            <p className="font-semibold">{food.name}</p>
+                            <p className="text-sm text-gray-600">{food.calories} kal</p>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t">
+                <div className="flex justify-around py-2">
+                  {[
+                    { id: 'dashboard', icon: 'trending-down', label: 'Home' },
+                    { id: 'food', icon: 'utensils', label: 'Makanan' },
+                    { id: 'progress', icon: 'heart', label: 'Progress' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex flex-col items-center py-2 px-4 ${activeTab === tab.id ? 'text-purple-600' : 'text-gray-600'}`}
+                    >
+                      <Icon icon={tab.icon} className="w-6 h-6" />
+                      <span className="text-xs mt-1">{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
